@@ -254,6 +254,16 @@ const Admin = () => {
       <Header />
 
       <div className="admin-content">
+        {/* Bithumb API 문서 링크 */}
+        <div className="info-box" style={{ margin: '0px', padding: '12px 16px', background: '#f8f9ff', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          <p style={{ fontSize: '15px', color: '#333', fontWeight: '600', margin: 0 }}>
+            <a href="https://apidocs.bithumb.com/docs/api-%EC%86%8C%EA%B0%9C" target="_blank" rel="noopener noreferrer" style={{ color: '#667eea', fontWeight: '500', textDecoration: 'underline' }}>Bithumb API 문서</a>
+          </p>
+        </div>
+
         <div className="section">
           <div
             className="section-header"

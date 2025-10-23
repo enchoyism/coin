@@ -41,7 +41,7 @@ const Guide = () => {
         {activeSection === 'bithumb' && (
           <div className="guide-section">
             <div className="guide-card">
-              <div className="info-box" style={{ margin: '30px 30px 16px 30px', padding: '12px 16px', background: '#f8f9ff', border: '1px solid #d0d5ff' }}>
+              <div className="info-box" style={{ margin: '30px 30px 16px 30px', padding: '12px 16px', background: '#f8f9ff' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
                 </svg>
