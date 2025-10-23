@@ -15,7 +15,7 @@ router.get('/google/callback',
   }),
   (req, res) => {
     // Successful authentication, redirect to frontend
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    res.redirect(`${process.env.FRONTEND_URL}/main`);
   }
 );
 

@@ -2,8 +2,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 12px 0;
+  margin-bottom: 15px;
+  padding: 6px 0;
   background: transparent;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -11,7 +11,7 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 
 .menu-btn {
@@ -123,7 +123,7 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 16px 0;
+    padding: 6px 0;
   }
 
   .user-name {
@@ -140,7 +140,7 @@
 
   .admin-btn,
   .logout-btn {
-    padding: 6px 12px;
+    padding: 6px 16px;
     font-size: 12px;
   }
 

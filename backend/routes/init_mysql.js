@@ -73,6 +73,8 @@ async function initializeDatabase() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일 (고유값)',
             c_bithumb VARCHAR(500) NULL,
+            c_bithumb_secret VARCHAR(500) NULL,
+            bithumb_expire_at DATETIME NULL,
             bithumb_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',
             c_telegram VARCHAR(500) NULL,
             telegram_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',

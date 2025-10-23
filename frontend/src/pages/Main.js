@@ -3,17 +3,33 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
-import './Dashboard.css';
+import './Main.css';
 
-const Dashboard = () => {
+const Main = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   // API KEY  관리 상태
   const [apiKey, setApiKey] = useState('');
+  const [apiSecretKey, setApiSecretKey] = useState('');
   const [isApiRegistered, setIsApiRegistered] = useState(false);
+  const [isSecretRegistered, setIsSecretRegistered] = useState(false);
   const [isApiEnabled, setIsApiEnabled] = useState(false);
   const [isApiEditing, setIsApiEditing] = useState(false);
+  const [isSecretEditing, setIsSecretEditing] = useState(false);
+  const [bithumbExpireAt, setBithumbExpireAt] = useState(null);
 
   // SNS 연동 KEY  관리 상태
   const [snsKey, setSnsKey] = useState('');
@@ -21,10 +37,8 @@ const Dashboard = () => {
   const [isSnsEnabled, setIsSnsEnabled] = useState(false);
   const [isSnsEditing, setIsSnsEditing] = useState(false);
 
-  // 아코디언 상태 - 둘 다 등록되어 있으면 접힌 상태, 아니면 펼쳐진 상태
-  const [isAccordionOpen, setIsAccordionOpen] = useState(
-    !(isApiRegistered && isSnsRegistered)
-  );
+  // 아코디언 상태
+  const [isAccordionOpen, setIsAccordionOpen] = useState(true);
 
   // 컴포넌트 마운트 시 연동 정보 조회
   useEffect(() => {
@@ -32,6 +46,18 @@ const Dashboard = () => {
       fetchConnectionData();
     }
   }, [user]);
+
+  // 모든 키 등록 및 ON 상태 확인하여 아코디언 자동 접기
+  useEffect(() => {
+    const allRegistered = isApiRegistered && isSecretRegistered && isSnsRegistered;
+    const allEnabled = isApiEnabled && isSnsEnabled;
+
+    if (allRegistered && allEnabled) {
+      setIsAccordionOpen(false);
+    } else {
+      setIsAccordionOpen(true);
+    }
+  }, [isApiRegistered, isSecretRegistered, isSnsRegistered, isApiEnabled, isSnsEnabled]);
 
   const fetchConnectionData = async () => {
     try {
@@ -41,13 +67,24 @@ const Dashboard = () => {
       );
 
       if (response.data.success) {
-        const { c_bithumb, bithumb_mode, c_telegram, telegram_mode } = response.data.data;
+        const { c_bithumb, c_bithumb_secret, bithumb_mode, bithumb_expire_at, c_telegram, telegram_mode } = response.data.data;
 
-        // Bithumb 데이터 설정
+        // Bithumb API Key 설정
         if (c_bithumb) {
           setApiKey(c_bithumb);
           setIsApiRegistered(true);
           setIsApiEnabled(bithumb_mode === 'ON');
+        }
+
+        // Bithumb SECRET KEY 설정
+        if (c_bithumb_secret) {
+          setApiSecretKey(c_bithumb_secret);
+          setIsSecretRegistered(true);
+        }
+
+        // Bithumb Expire At 설정
+        if (bithumb_expire_at) {
+          setBithumbExpireAt(bithumb_expire_at);
         }
 
         // Telegram 데이터 설정
@@ -57,10 +94,6 @@ const Dashboard = () => {
           setIsSnsEnabled(telegram_mode === 'ON');
         }
 
-        // 둘 다 등록되어 있으면 아코디언 접기
-        if (c_bithumb && c_telegram) {
-          setIsAccordionOpen(false);
-        }
       }
     } catch (error) {
       console.error('Error fetching connection data:', error);
@@ -87,7 +120,7 @@ const Dashboard = () => {
     setIsAccordionOpen(!isAccordionOpen);
   };
 
-  // API KEY  관리 함수
+  // API KEY 관리 함수
   const handleApiRegister = async () => {
     if (apiKey.trim()) {
       try {
@@ -104,10 +137,6 @@ const Dashboard = () => {
         if (response.data.success) {
           setIsApiRegistered(true);
           setIsApiEditing(false);
-          // 둘 다 등록되면 접기
-          if (isSnsRegistered) {
-            setIsAccordionOpen(false);
-          }
         }
       } catch (error) {
         console.error('Error registering API key:', error);
@@ -118,13 +147,13 @@ const Dashboard = () => {
 
   const handleApiEdit = () => {
     setIsApiEditing(true);
-    setApiKey(''); // 수정 모드 시작 시 입력창 비우기
+    setApiKey('');
   };
 
   const handleApiCancel = () => {
     setIsApiEditing(false);
-    setApiKey(''); // 취소 시 입력값 초기화
-    fetchConnectionData(); // 원래 데이터 다시 불러오기
+    setApiKey('');
+    fetchConnectionData();
   };
 
   const handleApiUpdate = async () => {
@@ -146,7 +175,6 @@ const Dashboard = () => {
 
       if (response.data.success) {
         setIsApiEditing(false);
-        alert('API KEY 가 수정되었습니다.');
       }
     } catch (error) {
       console.error('Error updating API key:', error);
@@ -155,7 +183,7 @@ const Dashboard = () => {
   };
 
   const handleApiDelete = async () => {
-    if (window.confirm('API KEY 을/를 삭제하시겠습니까?')) {
+    if (window.confirm('API KEY를 삭제하시겠습니까?')) {
       try {
         const response = await axios.post(
           'http://localhost:3001/api/connections',
@@ -172,11 +200,94 @@ const Dashboard = () => {
           setIsApiRegistered(false);
           setIsApiEnabled(false);
           setIsApiEditing(false);
-          setIsAccordionOpen(true); // 삭제하면 펼치기
         }
       } catch (error) {
         console.error('Error deleting API key:', error);
         alert('API KEY 삭제에 실패했습니다.');
+      }
+    }
+  };
+
+  // SECRET KEY 관리 함수
+  const handleSecretRegister = async () => {
+    if (apiSecretKey.trim()) {
+      try {
+        const response = await axios.post(
+          'http://localhost:3001/api/connections',
+          {
+            email: user.email,
+            c_bithumb_secret: apiSecretKey
+          },
+          { withCredentials: true }
+        );
+
+        if (response.data.success) {
+          setIsSecretRegistered(true);
+          setIsSecretEditing(false);
+        }
+      } catch (error) {
+        console.error('Error registering SECRET KEY:', error);
+        alert('SECRET KEY 등록에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleSecretEdit = () => {
+    setIsSecretEditing(true);
+    setApiSecretKey('');
+  };
+
+  const handleSecretCancel = () => {
+    setIsSecretEditing(false);
+    setApiSecretKey('');
+    fetchConnectionData();
+  };
+
+  const handleSecretUpdate = async () => {
+    if (!apiSecretKey.trim()) {
+      alert('SECRET KEY를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        'http://localhost:3001/api/connections',
+        {
+          email: user.email,
+          c_bithumb_secret: apiSecretKey
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setIsSecretEditing(false);
+      }
+    } catch (error) {
+      console.error('Error updating SECRET KEY:', error);
+      alert('SECRET KEY 수정에 실패했습니다.');
+    }
+  };
+
+  const handleSecretDelete = async () => {
+    if (window.confirm('SECRET KEY를 삭제하시겠습니까?')) {
+      try {
+        const response = await axios.post(
+          'http://localhost:3001/api/connections',
+          {
+            email: user.email,
+            c_bithumb_secret: null
+          },
+          { withCredentials: true }
+        );
+
+        if (response.data.success) {
+          setApiSecretKey('');
+          setIsSecretRegistered(false);
+          setIsSecretEditing(false);
+        }
+      } catch (error) {
+        console.error('Error deleting SECRET KEY:', error);
+        alert('SECRET KEY 삭제에 실패했습니다.');
       }
     }
   };
@@ -221,10 +332,6 @@ const Dashboard = () => {
         if (response.data.success) {
           setIsSnsRegistered(true);
           setIsSnsEditing(false);
-          // 둘 다 등록되면 접기
-          if (isApiRegistered) {
-            setIsAccordionOpen(false);
-          }
         }
       } catch (error) {
         console.error('Error registering SNS key:', error);
@@ -288,8 +395,6 @@ const Dashboard = () => {
           setIsSnsRegistered(false);
           setIsSnsEnabled(false);
           setIsSnsEditing(false);
-          setIsAccordionOpen(true); // 삭제하면 펼치기
-          alert('SNS KEY 가 삭제되었습니다.');
         }
       } catch (error) {
         console.error('Error deleting SNS key:', error);
@@ -298,20 +403,34 @@ const Dashboard = () => {
     }
   };
 
+  // Bithumb 테스트 함수
+  const handleBithumbTest = async () => {
+    try {
+      const response = await axios.get(
+        'http://localhost:3001/api/bithumb/api-keys',
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setBithumbExpireAt(response.data.expire_at);
+        alert('✅ 테스트 성공');
+      }
+    } catch (error) {
+      console.error('Error testing bithumb:', error);
+      const errorMsg = error.response?.data?.error || '테스트에 실패했습니다.';
+      alert(`❌ 테스트 실패\n\n${errorMsg}`);
+    }
+  };
+
   // 텔레그램 테스트 함수
   const [isTesting, setIsTesting] = useState(false);
   const handleTelegramTest = async () => {
-    if (!snsKey.trim()) {
-      alert('KEY을/를 입력해주세요.');
-      return;
-    }
-
     setIsTesting(true);
     try {
       const response = await axios.post(
         'http://localhost:3001/api/telegram/test',
         {
-          telegram_key: snsKey
+          email: user.email
         },
         { withCredentials: true }
       );
@@ -352,10 +471,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="main-container">
       <Header />
 
-      <div className="dashboard-content">
+      <div className="main-content">
         {/* 통합 KEY  관리 섹션 */}
         <div className="config-section">
           <div className="section-header" onClick={toggleAccordion}>
@@ -372,7 +491,25 @@ const Dashboard = () => {
             {/* API */}
             <div className="key-item">
               <div className="key-header">
-                <span className="key-label">Bithumb</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span className="key-label">Bithumb</span>
+                  <button
+                    className="guide-link-btn"
+                    onClick={() => window.open('/guide#bithumb', '_blank')}
+                    title="연동 가이드 보기"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                  </button>
+                  {bithumbExpireAt && (
+                    <span className="expire-at-text">
+                      (EXPIRE_AT: {formatDateTime(bithumbExpireAt)})
+                    </span>
+                  )}
+                </div>
                 <div className="toggle-container">
                   <button
                     className={`toggle-btn ${isApiEnabled ? 'active' : ''} ${!isApiRegistered ? 'disabled' : ''}`}
@@ -384,6 +521,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {/* API KEY */}
               {!isApiRegistered ? (
                 <div className="input-group">
                   <input
@@ -453,6 +591,86 @@ const Dashboard = () => {
                   </button>
                 </div>
               )}
+
+              {/* SECRET KEY */}
+              {!isSecretRegistered ? (
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="key-input"
+                    placeholder="SECRET KEY 을/를 입력하세요"
+                    value={apiSecretKey}
+                    onChange={(e) => setApiSecretKey(e.target.value)}
+                  />
+                  <button className="icon-btn icon-btn-save" onClick={handleSecretRegister} title="등록">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                      <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                      <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              ) : isSecretEditing ? (
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="key-input"
+                    placeholder="새로운 SECRET KEY 를 입력하세요"
+                    value={apiSecretKey}
+                    onChange={(e) => setApiSecretKey(e.target.value)}
+                  />
+                  <button className="icon-btn icon-btn-save" onClick={handleSecretUpdate} title="저장">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </button>
+                  <button className="icon-btn icon-btn-cancel" onClick={handleSecretCancel} title="취소">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="input-group">
+                  <div className="input-with-copy">
+                    <input
+                      type="text"
+                      className="key-input"
+                      placeholder="SECRET KEY"
+                      value={maskKey(apiSecretKey)}
+                      disabled
+                    />
+                    <button className="copy-icon-btn" onClick={() => handleCopy(apiSecretKey, 'SECRET KEY가')} title="복사">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <button className="icon-btn icon-btn-edit" onClick={handleSecretEdit} title="수정">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button className="icon-btn icon-btn-delete" onClick={handleSecretDelete} title="삭제">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              {/* Bithumb 테스트 버튼 */}
+              {isApiRegistered && isSecretRegistered && (
+                <div className="test-button-row">
+                  <button className="btn-test" onClick={handleBithumbTest}>
+                    TEST
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* SNS */}
@@ -492,12 +710,6 @@ const Dashboard = () => {
                     value={snsKey}
                     onChange={(e) => setSnsKey(e.target.value)}
                   />
-                  <button className="icon-btn icon-btn-test" onClick={handleTelegramTest} disabled={isTesting} title="테스트">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                  </button>
                   <button className="icon-btn icon-btn-save" onClick={handleSnsRegister} title="등록">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -515,12 +727,6 @@ const Dashboard = () => {
                     value={snsKey}
                     onChange={(e) => setSnsKey(e.target.value)}
                   />
-                  <button className="icon-btn icon-btn-test" onClick={handleTelegramTest} disabled={isTesting} title="테스트">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                  </button>
                   <button className="icon-btn icon-btn-save" onClick={handleSnsUpdate} title="저장">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12"></polyline>
@@ -564,6 +770,15 @@ const Dashboard = () => {
                   </button>
                 </div>
               )}
+
+              {/* Telegram 테스트 버튼 */}
+              {isSnsRegistered && (
+                <div className="test-button-row">
+                  <button className="btn-test" onClick={handleTelegramTest} disabled={isTesting}>
+                    TEST
+                  </button>
+                </div>
+              )}
             </div>
             </div>
             </>
@@ -574,4 +789,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Main;

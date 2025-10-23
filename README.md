@@ -12,7 +12,7 @@ nodejs/
 │   └── .env.example  # 환경 변수 예시
 └── frontend/         # React 앱
     ├── src/
-    │   ├── pages/    # Login, Dashboard 페이지
+    │   ├── pages/    # Login, Main 페이지등
     │   ├── components/ # PrivateRoute 컴포넌트
     │   ├── context/  # AuthContext
     │   └── App.js
@@ -86,7 +86,7 @@ React 앱이 http://localhost:3000 에서 실행됩니다.
 1. 브라우저에서 http://localhost:3000 접속
 2. "Sign in with Google" 버튼 클릭
 3. Google 계정으로 로그인
-4. 로그인 성공 후 Dashboard 페이지로 이동
+4. 로그인 성공 후 Main 페이지로 이동
 5. "Fetch Sample Data" 버튼을 클릭하여 Protected API 테스트
 6. "Logout" 버튼으로 로그아웃
 

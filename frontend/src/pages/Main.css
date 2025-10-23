@@ -1,11 +1,11 @@
-.dashboard-container {
+.main-container {
   min-height: 100vh;
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.dashboard-content {
+.main-content {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -100,6 +100,18 @@
   gap: 8px;
 }
 
+.expire-at-text {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .guide-link-btn {
   background: none;
   border: none;
@@ -151,11 +163,11 @@
 }
 
 .toggle-btn.active {
-  background: #3b82f6 !important;
+  background: #60a5fa !important;
 }
 
 .toggle-btn.active:hover {
-  background: #3b82f6 !important;
+  background: #60a5fa !important;
 }
 
 .toggle-btn:disabled {
@@ -207,6 +219,11 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-bottom: 5px;
+}
+
+.input-group:last-child {
+  margin-bottom: 0;
 }
 
 .input-with-copy {
@@ -383,8 +400,8 @@
 }
 
 .icon-btn-delete {
-  background: #dc2626 !important;
-  border-color: #dc2626 !important;
+  background: #f87171 !important;
+  border-color: #f87171 !important;
   color: white !important;
 }
 
@@ -393,18 +410,23 @@
 }
 
 .icon-btn-delete:hover {
-  background: #dc2626 !important;
-  border-color: #dc2626 !important;
+  background: #f87171 !important;
+  border-color: #f87171 !important;
 }
 
 .icon-btn-test {
   background: #059669 !important;
   border-color: #059669 !important;
   color: white !important;
+  min-width: 32px;
+  height: 16px !important;
+  padding: 4px 8px;
 }
 
 .icon-btn-test svg {
   stroke: white !important;
+  width: 16px;
+  height: 16px;
 }
 
 .icon-btn-test:hover:not(:disabled) {
@@ -417,8 +439,43 @@
   cursor: not-allowed;
 }
 
+/* Test Button Row */
+.test-button-row {
+  margin-top: 12px;
+}
+
+.btn-test {
+  width: 100%;
+  padding: 10px 16px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  border: 0px;
+  border-radius: 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+}
+
+.btn-test:hover:not(:disabled) {
+  background: #c7d2fe;
+  border-color: #a5b4fc;
+}
+
+.btn-test:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
-  .dashboard-container {
+  .main-container {
     padding: 16px;
   }
 

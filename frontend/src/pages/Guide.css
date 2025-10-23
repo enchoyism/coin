@@ -1,12 +1,14 @@
 .guide-container {
   min-height: 100vh;
   background: #f8f9fa;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .guide-content {
   max-width: 900px;
   margin: 0 auto;
-  padding: 40px 20px;
 }
 
 .guide-header {
@@ -262,8 +264,8 @@
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
-  .guide-content {
-    padding: 20px 16px;
+  .guide-container {
+    padding: 16px;
   }
 
   .guide-header {

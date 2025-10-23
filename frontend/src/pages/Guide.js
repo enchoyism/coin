@@ -41,6 +41,12 @@ const Guide = () => {
         {activeSection === 'bithumb' && (
           <div className="guide-section">
             <div className="guide-card">
+              <div className="info-box" style={{ margin: '30px 30px 16px 30px', padding: '12px 16px', background: '#f8f9ff', border: '1px solid #d0d5ff' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                <p style={{ fontSize: '14px', color: '#333', fontWeight: '400' }}>자세한 내용은 <a href="https://www.bithumb.com/customer_support/info_guide/others/6703" target="_blank" rel="noopener noreferrer" style={{ color: '#667eea', fontWeight: '500', textDecoration: 'underline' }}>Bithumb 공식 가이드</a>를 참고하세요.</p>
+              </div>
               <div className="guide-steps">
                 <div className="guide-step">
                   <div className="step-number">1</div>
@@ -62,7 +68,15 @@ const Guide = () => {
                   <div className="step-number">3</div>
                   <div className="step-content">
                     <h3>API Key 발급</h3>
-                    <p>새 API Key를 생성하고 필요한 권한을 설정합니다.</p>
+                    <p>새 API Key를 생성합니다:</p>
+                    <div className="code-block">
+                      <div className="code-label">API 활성 항목:</div>
+                      <code>모두 선택</code>
+                    </div>
+                    <div className="code-block">
+                      <div className="code-label">IP 주소 등록:</div>
+                      <code>119.196.225.225</code>
+                    </div>
                     <div className="info-box warning">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -77,8 +91,8 @@ const Guide = () => {
                 <div className="guide-step">
                   <div className="step-number">4</div>
                   <div className="step-content">
-                    <h3>Dashboard에 등록</h3>
-                    <p>발급받은 API Key를 Dashboard에 입력하고 저장합니다.</p>
+                    <h3>메인페이지에 등록</h3>
+                    <p>발급받은 API Key, Secret Key를 메인페이지에 입력하고 저장합니다.</p>
                     <div className="info-box success">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -183,8 +197,8 @@ const Guide = () => {
                 <div className="guide-step">
                   <div className="step-number">6</div>
                   <div className="step-content">
-                    <h3>Dashboard에 등록</h3>
-                    <p>Dashboard의 Telegram 섹션에 다음 형식으로 입력합니다:</p>
+                    <h3>메인페이지에 등록</h3>
+                    <p>메인페이지의 Telegram 섹션에 다음 형식으로 입력합니다:</p>
                     <div className="code-block highlight">
                       <div className="code-label">입력 형식:</div>
                       <code>[BOT_TOKEN]:[CHAT_ID]</code>

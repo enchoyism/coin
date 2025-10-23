@@ -11,7 +11,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate('/main');
     }
 
     // URL에서 에러 파라미터 확인

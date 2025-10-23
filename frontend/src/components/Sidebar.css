@@ -65,7 +65,7 @@
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 16px;
   color: #666;
   cursor: pointer;
@@ -103,7 +103,7 @@
 .sidebar-item-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sidebar-arrow {

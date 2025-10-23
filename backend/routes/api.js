@@ -339,7 +339,7 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
     connection = await mysql.createConnection(dbConfig);
 
     const [connections] = await connection.query(
-      'SELECT id, email, c_bithumb, bithumb_mode, c_telegram, telegram_mode FROM connection WHERE email = ?',
+      'SELECT * FROM connection WHERE email = ?',
       [email]
     );
 
@@ -350,6 +350,7 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
         data: {
           email,
           c_bithumb: null,
+          c_bithumb_secret: null,
           bithumb_mode: 'OFF',
           c_telegram: null,
           telegram_mode: 'OFF'
@@ -365,7 +366,9 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
         id: conn.id,
         email: conn.email,
         c_bithumb: conn.c_bithumb ? decrypt(conn.c_bithumb) : null,
+        c_bithumb_secret: conn.c_bithumb_secret ? decrypt(conn.c_bithumb_secret) : null,
         bithumb_mode: conn.bithumb_mode,
+        bithumb_expire_at: conn.bithumb_expire_at,
         c_telegram: conn.c_telegram ? decrypt(conn.c_telegram) : null,
         telegram_mode: conn.telegram_mode
       }
@@ -388,13 +391,13 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
 /**
  * POST /api/connections
  * 연동 정보 생성 또는 업데이트
- * Body: { email, c_bithumb?, bithumb_mode?, c_telegram?, telegram_mode? }
+ * Body: { email, c_bithumb?, c_bithumb_secret?, bithumb_mode?, c_telegram?, telegram_mode? }
  */
 router.post('/connections', isAuthenticated, async (req, res) => {
   let connection;
 
   try {
-    const { email, c_bithumb, bithumb_mode, c_telegram, telegram_mode } = req.body;
+    const { email, c_bithumb, c_bithumb_secret, bithumb_mode, c_telegram, telegram_mode } = req.body;
 
     // 자신의 정보이거나 관리자만 수정 가능
     if (req.user.email !== email && !req.user.isAdmin) {
@@ -413,30 +416,53 @@ router.post('/connections', isAuthenticated, async (req, res) => {
 
     connection = await mysql.createConnection(dbConfig);
 
-    // 데이터 암호화
-    const encryptedBithumb = c_bithumb ? encrypt(c_bithumb) : null;
-    const encryptedTelegram = c_telegram ? encrypt(c_telegram) : null;
+    // 기존 데이터 조회
+    const [existing] = await connection.query(
+      'SELECT * FROM connection WHERE email = ?',
+      [email]
+    );
+
+    // 데이터 암호화 - 요청에 포함된 경우만 처리
+    let finalBithumb, finalBithumbSecret, finalBithumbMode, finalTelegram, finalTelegramMode;
+
+    if (existing.length > 0) {
+      // UPDATE: 요청에 포함된 필드만 업데이트
+      finalBithumb = c_bithumb !== undefined ? (c_bithumb ? encrypt(c_bithumb) : null) : existing[0].c_bithumb;
+      finalBithumbSecret = c_bithumb_secret !== undefined ? (c_bithumb_secret ? encrypt(c_bithumb_secret) : null) : existing[0].c_bithumb_secret;
+      finalBithumbMode = bithumb_mode !== undefined ? bithumb_mode : existing[0].bithumb_mode;
+      finalTelegram = c_telegram !== undefined ? (c_telegram ? encrypt(c_telegram) : null) : existing[0].c_telegram;
+      finalTelegramMode = telegram_mode !== undefined ? telegram_mode : existing[0].telegram_mode;
+    } else {
+      // INSERT: 새로 생성
+      finalBithumb = c_bithumb ? encrypt(c_bithumb) : null;
+      finalBithumbSecret = c_bithumb_secret ? encrypt(c_bithumb_secret) : null;
+      finalBithumbMode = bithumb_mode || 'OFF';
+      finalTelegram = c_telegram ? encrypt(c_telegram) : null;
+      finalTelegramMode = telegram_mode || 'OFF';
+    }
 
     // INSERT ... ON DUPLICATE KEY UPDATE
     await connection.query(`
-      INSERT INTO connection (email, c_bithumb, bithumb_mode, c_telegram, telegram_mode)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO connection (email, c_bithumb, c_bithumb_secret, bithumb_mode, c_telegram, telegram_mode)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         c_bithumb = VALUES(c_bithumb),
+        c_bithumb_secret = VALUES(c_bithumb_secret),
         bithumb_mode = VALUES(bithumb_mode),
         c_telegram = VALUES(c_telegram),
         telegram_mode = VALUES(telegram_mode)
     `, [
       email,
-      encryptedBithumb,
-      bithumb_mode || 'OFF',
-      encryptedTelegram,
-      telegram_mode || 'OFF'
+      finalBithumb,
+      finalBithumbSecret,
+      finalBithumbMode,
+      finalTelegram,
+      finalTelegramMode
     ]);
 
     // 업데이트된 정보 조회 및 복호화
     const [connections] = await connection.query(
-      'SELECT id, email, c_bithumb, bithumb_mode, c_telegram, telegram_mode FROM connection WHERE email = ?',
+      'SELECT * FROM connection WHERE email = ?',
       [email]
     );
 
@@ -448,6 +474,7 @@ router.post('/connections', isAuthenticated, async (req, res) => {
         id: conn.id,
         email: conn.email,
         c_bithumb: conn.c_bithumb ? decrypt(conn.c_bithumb) : null,
+        c_bithumb_secret: conn.c_bithumb_secret ? decrypt(conn.c_bithumb_secret) : null,
         bithumb_mode: conn.bithumb_mode,
         c_telegram: conn.c_telegram ? decrypt(conn.c_telegram) : null,
         telegram_mode: conn.telegram_mode
@@ -534,7 +561,7 @@ router.patch('/connections/:email/mode', isAuthenticated, async (req, res) => {
 
     // 업데이트된 정보 조회 및 복호화
     const [connections] = await connection.query(
-      'SELECT id, email, c_bithumb, bithumb_mode, c_telegram, telegram_mode FROM connection WHERE email = ?',
+      'SELECT * FROM connection WHERE email = ?',
       [email]
     );
 
@@ -639,6 +666,94 @@ router.post('/telegram/test', isAuthenticated, async (req, res) => {
       error: errorMessage,
       details: error.response?.data
     });
+  }
+});
+
+/**
+ * POST /api/telegram/test
+ * Telegram 메시지 전송 테스트 (email로 조회)
+ */
+router.post('/telegram/test', isAuthenticated, async (req, res) => {
+  let connection;
+
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    connection = await mysql.createConnection(dbConfig);
+
+    // 연동 정보 조회
+    const [connections] = await connection.query(
+      'SELECT * FROM connection WHERE email = ?',
+      [email]
+    );
+
+    if (connections.length === 0 || !connections[0].c_telegram) {
+      return res.status(400).json({
+        success: false,
+        error: 'Telegram KEY를 등록해주세요.'
+      });
+    }
+
+    const telegram_key = decrypt(connections[0].c_telegram);
+    const [botToken, chatId] = telegram_key.split(':');
+
+    if (!botToken || !chatId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Telegram KEY 형식이 올바르지 않습니다. (형식: botToken:chatId)'
+      });
+    }
+
+    // Telegram API로 테스트 메시지 전송
+    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const response = await axios.post(telegramUrl, {
+      chat_id: chatId,
+      text: '✅ 텔레그램 연동 테스트 메시지입니다.'
+    });
+
+    if (response.data.ok) {
+      res.json({
+        success: true,
+        message: '테스트 메시지가 전송되었습니다.'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Telegram API 응답 오류'
+      });
+    }
+
+  } catch (error) {
+    console.error('Telegram test error:', error);
+
+    let errorMessage = '테스트 메시지 전송에 실패했습니다.';
+
+    if (error.response) {
+      if (error.response.status === 404) {
+        errorMessage = 'Bot Token이 올바르지 않습니다.';
+      } else if (error.response.status === 400) {
+        errorMessage = 'Chat ID가 올바르지 않습니다.';
+      }
+    } else if (error.code === 'ENOTFOUND') {
+      errorMessage = '네트워크 연결을 확인해주세요.';
+    }
+
+    res.status(400).json({
+      success: false,
+      error: errorMessage,
+      details: error.response?.data
+    });
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
   }
 });
 
