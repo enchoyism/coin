@@ -37,11 +37,26 @@ const Header = () => {
           <span className="user-name">{user?.displayName || 'User'}</span>
           <span className="user-separator">·</span>
           <span className="user-email">{user?.email || 'No email'}</span>
+          {user?.expireAt && !user?.isAdmin && (
+            <>
+              <span className="user-separator">·</span>
+              <span className="user-expire">
+                {new Date(user.expireAt).toISOString().split('T')[0]}
+              </span>
+            </>
+          )}
         </div>
       </div>
-      <button onClick={handleLogout} className="logout-btn">
-        로그아웃
-      </button>
+      <div className="header-actions">
+        {user?.isAdmin && (
+          <button onClick={() => navigate('/admin')} className="admin-btn">
+            관리자
+          </button>
+        )}
+        <button onClick={handleLogout} className="logout-btn">
+          로그아웃
+        </button>
+      </div>
     </div>
   );
 };

@@ -5,9 +5,19 @@ const passport = require('passport');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// MySQL 연결 설정
+const dbConfig = {
+  host: process.env.MYSQL_HOST || 'localhost',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASS || '',
+  port: process.env.MYSQL_PORT || 3306,
+  database: process.env.MYSQL_DATABASE || 'coin'
+};
 
 // Middleware
 app.use(express.json());
@@ -37,20 +47,53 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `${process.env.BACKEND_URL}/auth/google/callback`
   },
-  (accessToken, refreshToken, profile, done) => {
-    // Here you would typically save user to database
-    // For this example, we'll just pass the profile
-    const userEmail = profile.emails[0].value;
-    const adminEmails = process.env.ADMIN ? process.env.ADMIN.split(',').map(email => email.trim()) : [];
+  async (accessToken, refreshToken, profile, done) => {
+    let connection;
+    try {
+      const userEmail = profile.emails[0].value;
 
-    const user = {
-      id: profile.id,
-      displayName: profile.displayName,
-      email: userEmail,
-      photo: profile.photos[0].value,
-      isAdmin: adminEmails.includes(userEmail)
-    };
-    return done(null, user);
+      // DB에서 사용자 확인
+      connection = await mysql.createConnection(dbConfig);
+      const [users] = await connection.query(
+        'SELECT id, username, email, expire_at, is_admin FROM users WHERE email = ?',
+        [userEmail]
+      );
+
+      // 사용자가 DB에 없으면 로그인 거부
+      if (users.length === 0) {
+        return done(null, false, { message: '등록되지 않은 사용자입니다.' });
+      }
+
+      const dbUser = users[0];
+
+      // 만료일 체크
+      if (dbUser.expire_at) {
+        const expireDate = new Date(dbUser.expire_at);
+        const now = new Date();
+        if (expireDate < now) {
+          return done(null, false, { message: '만료된 계정입니다.' });
+        }
+      }
+
+      // 로그인 성공
+      const user = {
+        id: dbUser.id,
+        displayName: dbUser.username,
+        email: dbUser.email,
+        photo: profile.photos[0].value,
+        isAdmin: dbUser.is_admin === 'T',
+        expireAt: dbUser.expire_at
+      };
+
+      return done(null, user);
+    } catch (error) {
+      console.error('Error in Google OAuth Strategy:', error);
+      return done(error);
+    } finally {
+      if (connection) {
+        await connection.end();
+      }
+    }
   }
 ));
 
@@ -67,6 +110,7 @@ passport.deserializeUser((user, done) => {
 // Import routes
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
+const initMysqlRoutes = require('./routes/init_mysql');
 
 // Routes
 app.get('/', (req, res) => {
@@ -76,6 +120,7 @@ app.get('/', (req, res) => {
 // Use routes
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
+app.use('/api', initMysqlRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

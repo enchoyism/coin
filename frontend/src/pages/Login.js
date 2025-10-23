@@ -1,17 +1,25 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+
+    // URL에서 에러 파라미터 확인
+    const error = searchParams.get('error');
+    if (error === 'auth_failed') {
+      setErrorMessage('Login failed\nunregistered or expired');
+    }
+  }, [user, navigate, searchParams]);
 
   const handleGoogleLogin = () => {
     window.location.href = 'http://localhost:3001/auth/google';
@@ -24,6 +32,12 @@ const Login = () => {
           <h1>Login</h1>
           <p>Sign in to continue</p>
         </div>
+
+        {errorMessage && (
+          <div className="error-message">
+            {errorMessage}
+          </div>
+        )}
 
         <button onClick={handleGoogleLogin} className="google-login-btn">
           <svg className="google-icon" viewBox="0 0 24 24">

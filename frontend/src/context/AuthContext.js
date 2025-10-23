@@ -16,16 +16,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 로그인 페이지에서는 인증 체크 하지 않음
+    if (window.location.pathname === '/login') {
+      setLoading(false);
+      return;
+    }
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
       const response = await axios.get('http://localhost:3001/auth/user', {
-        withCredentials: true
+        withCredentials: true,
+        validateStatus: (status) => {
+          // 200-299와 401은 정상으로 처리 (에러 던지지 않음)
+          return (status >= 200 && status < 300) || status === 401;
+        }
       });
-      setUser(response.data.user);
+
+      if (response.status === 401) {
+        setUser(null);
+      } else {
+        setUser(response.data.user);
+      }
     } catch (error) {
+      console.error('Auth check error:', error);
       setUser(null);
     } finally {
       setLoading(false);

@@ -175,6 +175,43 @@
   align-items: center;
 }
 
+.input-with-copy {
+  flex: 3;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-copy .key-input {
+  flex: 1;
+  width: 100%;
+  padding-right: 40px;
+}
+
+.copy-icon-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 0;
+}
+
+.copy-icon-btn:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.copy-icon-btn:active {
+  transform: scale(0.95);
+}
+
 .key-input {
   flex: 3;
   padding: 10px 14px;
@@ -214,6 +251,12 @@
   white-space: nowrap;
 }
 
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 13px;
+  flex: 0.8;
+}
+
 .btn-primary {
   background: #667eea;
   color: white;
@@ -242,6 +285,76 @@
 }
 
 .btn-danger:hover {
+  background: #fecaca;
+  border-color: #dc2626;
+}
+
+/* Icon Buttons */
+.icon-btn {
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+.icon-btn-save {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.icon-btn-save:hover {
+  background: #5568d3;
+  border-color: #5568d3;
+}
+
+.icon-btn-cancel {
+  background: #f8f9fa;
+  border-color: #e0e0e0;
+  color: #666;
+}
+
+.icon-btn-cancel:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #333;
+}
+
+.icon-btn-edit {
+  background: #f8f9fa;
+  border-color: #e0e0e0;
+  color: #666;
+}
+
+.icon-btn-edit:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #333;
+}
+
+.icon-btn-delete {
+  background: #fee;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.icon-btn-delete:hover {
   background: #fecaca;
   border-color: #dc2626;
 }
