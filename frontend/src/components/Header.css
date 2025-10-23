@@ -1,0 +1,105 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px 0;
+  background: transparent;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.logout-btn {
+  padding: 6px 16px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+}
+
+.user-card {
+  background: transparent;
+  border-radius: 0;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: none;
+}
+
+.user-avatar img {
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-name {
+  color: #333;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.user-separator {
+  color: #999;
+  font-size: 12px;
+}
+
+.user-email {
+  color: #000;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 16px 0;
+  }
+
+  .user-name {
+    font-size: 12px;
+  }
+
+  .user-email {
+    font-size: 11px;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .user-avatar img,
+  .avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}

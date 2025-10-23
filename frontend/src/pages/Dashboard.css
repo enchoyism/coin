@@ -1,0 +1,314 @@
+.dashboard-container {
+  min-height: 100vh;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Config Section */
+.config-section {
+  background: white;
+  border-radius: 0;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
+}
+
+.section-divider {
+  border-bottom: 1px solid #f0f0f0;
+  margin: 16px 0 24px 0;
+}
+
+.section-header:hover h3 {
+  color: #667eea;
+}
+
+.section-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  transition: color 0.2s ease;
+}
+
+.accordion-toggle-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 0;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 300;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.accordion-toggle-btn:hover {
+  background: #f8f9fa;
+  color: #333;
+  border-color: #adb5bd;
+}
+
+/* Key Item */
+.key-item {
+  padding: 20px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.key-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.key-item:first-child {
+  padding-top: 0;
+}
+
+.key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.key-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Toggle Switch */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-btn {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #e5e7eb;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  padding: 0;
+}
+
+.toggle-btn:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.toggle-btn.active {
+  background: #667eea;
+}
+
+.toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 0;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-btn.active .toggle-slider {
+  transform: translateX(24px);
+}
+
+.toggle-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  min-width: 28px;
+}
+
+/* Config Body */
+.config-body {
+  margin-top: 20px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.key-input {
+  flex: 3;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.key-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.key-input:disabled {
+  background: #f8f9fa;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.key-input::placeholder {
+  color: #aaa;
+}
+
+/* Buttons */
+.btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.btn-danger {
+  background: #fee;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn-danger:hover {
+  background: #fecaca;
+  border-color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+
+  .config-section {
+    padding: 16px;
+  }
+
+  .section-header h3 {
+    font-size: 16px;
+  }
+
+  .section-divider {
+    margin: 12px 0 16px 0;
+  }
+
+  .accordion-toggle-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+
+  .key-item {
+    padding: 16px 0;
+  }
+
+  .key-label {
+    font-size: 14px;
+  }
+
+  .toggle-btn {
+    width: 44px;
+    height: 22px;
+  }
+
+  .toggle-slider {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toggle-btn.active .toggle-slider {
+    transform: translateX(22px);
+  }
+
+  .toggle-status {
+    font-size: 12px;
+  }
+
+  .input-group {
+    gap: 8px;
+  }
+
+  .key-input {
+    flex: 3;
+    min-width: 0;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .btn {
+    flex: 1;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
