@@ -8,6 +8,30 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  border-radius: 0;
+}
+
+.menu-btn:hover {
+  color: #333;
+  background: #f8f9fa;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;

@@ -1,0 +1,363 @@
+.guide-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.guide-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.guide-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.guide-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.guide-subtitle {
+  font-size: 15px;
+  color: #666;
+  margin: 0;
+}
+
+/* 네비게이션 탭 */
+.guide-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #ddd;
+}
+
+.guide-nav-btn {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+
+.guide-nav-btn:hover {
+  color: #333;
+}
+
+.guide-nav-btn.active {
+  color: #333;
+  border-bottom-color: #333;
+}
+
+/* 가이드 섹션 */
+.guide-section {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.guide-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.guide-card-header {
+  background: #333;
+  padding: 30px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.guide-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.guide-card-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* 가이드 스텝 */
+.guide-steps {
+  padding: 30px;
+}
+
+.guide-step {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.guide-step:last-child {
+  margin-bottom: 0;
+}
+
+.guide-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 36px;
+  bottom: -40px;
+  width: 1px;
+  background: #ddd;
+}
+
+.step-number {
+  width: 34px;
+  height: 34px;
+  background: #333;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.step-content p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.step-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* 코드 블록 */
+.code-block {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 0;
+  padding: 14px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.code-block code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  color: #333;
+  display: block;
+  word-break: break-all;
+}
+
+.code-block.highlight {
+  background: #fff;
+  border: 2px solid #333;
+}
+
+.code-block.highlight code {
+  color: #333;
+  font-weight: 600;
+}
+
+.code-label {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-block.highlight .code-label {
+  color: #333;
+}
+
+/* 정보 박스 */
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 0;
+  margin: 12px 0;
+}
+
+.info-box svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-box p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.info-box.warning {
+  background: #fff9e6;
+  border: 1px solid #ffa726;
+  color: #e65100;
+}
+
+.info-box.warning svg {
+  stroke: #ffa726;
+}
+
+.info-box.success {
+  background: #f0f8f0;
+  border: 1px solid #66bb6a;
+  color: #2e7d32;
+}
+
+.info-box.success svg {
+  stroke: #66bb6a;
+}
+
+/* 링크 스타일 */
+.step-content a {
+  color: #333;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.step-content a:hover {
+  opacity: 0.7;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .guide-content {
+    padding: 20px 16px;
+  }
+
+  .guide-header {
+    margin-bottom: 30px;
+  }
+
+  .guide-header h1 {
+    font-size: 24px;
+  }
+
+  .guide-subtitle {
+    font-size: 13px;
+  }
+
+  .guide-nav {
+    gap: 8px;
+  }
+
+  .guide-nav-btn {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+
+  .guide-card-header {
+    padding: 20px;
+    flex-direction: row;
+    gap: 15px;
+  }
+
+  .guide-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .guide-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .guide-card-header h2 {
+    font-size: 18px;
+  }
+
+  .guide-steps {
+    padding: 20px 16px;
+  }
+
+  .guide-step {
+    gap: 14px;
+    margin-bottom: 30px;
+  }
+
+  .guide-step:not(:last-child)::after {
+    left: 13px;
+    top: 30px;
+    bottom: -30px;
+  }
+
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .step-content h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .step-content p {
+    font-size: 13px;
+  }
+
+  .code-block {
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  .code-block code {
+    font-size: 11px;
+  }
+
+  .info-box {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .info-box svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .info-box p {
+    font-size: 12px;
+  }
+}

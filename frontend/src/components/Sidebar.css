@@ -1,0 +1,167 @@
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -200px;
+  width: 200px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  transition: none;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  border-radius: 0;
+}
+
+.sidebar-close-btn:hover {
+  color: #333;
+  background: #f8f9fa;
+}
+
+.sidebar-nav {
+  padding: 8px 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  color: #666;
+  cursor: pointer;
+  transition: none;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-item:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.sidebar-item.active {
+  background: #f0f4ff;
+  color: #3b82f6;
+  border-left-color: #3b82f6;
+}
+
+.sidebar-item svg {
+  flex-shrink: 0;
+}
+
+.sidebar-item span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sidebar-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.sidebar-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-arrow {
+  transition: none;
+  flex-shrink: 0;
+}
+
+.sidebar-arrow.open {
+  transform: rotate(180deg);
+}
+
+.sidebar-submenu {
+  background: white;
+  padding: 4px 0;
+}
+
+.sidebar-subitem {
+  padding: 8px 16px 8px 42px;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  transition: none;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-subitem:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.sidebar-subitem.active {
+  background: #f0f4ff;
+  color: #3b82f6;
+  border-left-color: #3b82f6;
+  font-weight: 500;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 180px;
+    left: -180px;
+  }
+
+  .sidebar-header {
+    padding: 12px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 16px;
+  }
+
+  .sidebar-item {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .sidebar-subitem {
+    padding: 6px 12px 6px 36px;
+  }
+}

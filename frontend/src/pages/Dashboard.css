@@ -42,7 +42,7 @@
   font-weight: 600;
   color: #333;
   margin: 0;
-  transition: color 0.2s ease;
+  transition: none;
 }
 
 .accordion-toggle-btn {
@@ -58,7 +58,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: none;
   padding: 0;
   line-height: 1;
 }
@@ -95,6 +95,32 @@
   font-size: 15px;
   font-weight: 600;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-link-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  border-radius: 50%;
+}
+
+.guide-link-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #5568d3;
+  transform: scale(1.1);
+}
+
+.guide-link-btn:active {
+  transform: scale(0.95);
 }
 
 /* Toggle Switch */
@@ -112,16 +138,24 @@
   border: none;
   border-radius: 0;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: none;
   padding: 0;
 }
 
-.toggle-btn:hover:not(:disabled) {
-  background: #d1d5db;
+.toggle-btn:not(.active) {
+  background: #e5e7eb !important;
+}
+
+.toggle-btn:not(.active):hover {
+  background: #e5e7eb !important;
 }
 
 .toggle-btn.active {
-  background: #667eea;
+  background: #3b82f6 !important;
+}
+
+.toggle-btn.active:hover {
+  background: #3b82f6 !important;
 }
 
 .toggle-btn:disabled {
@@ -137,7 +171,7 @@
   height: 20px;
   background: white;
   border-radius: 0;
-  transition: transform 0.3s ease;
+  transition: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -199,7 +233,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: none;
   border-radius: 0;
 }
 
@@ -219,7 +253,7 @@
   border-radius: 0;
   font-size: 14px;
   color: #333;
-  transition: all 0.2s ease;
+  transition: none;
 }
 
 .key-input:focus {
@@ -247,7 +281,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: none;
   white-space: nowrap;
 }
 
@@ -296,7 +330,7 @@
   background: #f8f9fa;
   border-radius: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,14 +383,38 @@
 }
 
 .icon-btn-delete {
-  background: #fee;
-  border-color: #fecaca;
-  color: #dc2626;
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+.icon-btn-delete svg {
+  stroke: white !important;
 }
 
 .icon-btn-delete:hover {
-  background: #fecaca;
-  border-color: #dc2626;
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.icon-btn-test {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: white !important;
+}
+
+.icon-btn-test svg {
+  stroke: white !important;
+}
+
+.icon-btn-test:hover:not(:disabled) {
+  background: #059669 !important;
+  border-color: #059669 !important;
+}
+
+.icon-btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

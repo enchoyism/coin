@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+const axios = require('axios');
 const router = express.Router();
 const { encrypt, decrypt } = require('../utils/crypto');
 
@@ -562,6 +563,82 @@ router.patch('/connections/:email/mode', isAuthenticated, async (req, res) => {
     if (connection) {
       await connection.end();
     }
+  }
+});
+
+/**
+ * POST /api/telegram/test
+ * 텔레그램 연동 테스트
+ * Body: { telegram_key: 'bot_token:chat_id' }
+ */
+router.post('/telegram/test', isAuthenticated, async (req, res) => {
+  try {
+    const { telegram_key } = req.body;
+
+    if (!telegram_key) {
+      return res.status(400).json({
+        success: false,
+        error: 'telegram_key is required'
+      });
+    }
+
+    // telegram_key 파싱 (bot_token:chat_id 형식)
+    const parts = telegram_key.split(':');
+    if (parts.length < 3) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid telegram key format. Expected: bot_token:chat_id'
+      });
+    }
+
+    // bot_token은 첫 두 부분, chat_id는 마지막 부분
+    const chatId = parts[parts.length - 1];
+    const botToken = parts.slice(0, -1).join(':');
+
+    // Telegram API로 테스트 메시지 전송
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    const response = await axios.post(telegramApiUrl, {
+      chat_id: chatId,
+      text: '✅ 텔레그램 연동 테스트 성공!\n정상적으로 연결되었습니다.'
+    });
+
+    if (response.data.ok) {
+      res.json({
+        success: true,
+        message: '테스트 메시지가 성공적으로 전송되었습니다.'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Failed to send test message',
+        details: response.data
+      });
+    }
+
+  } catch (error) {
+    console.error('Error testing telegram:', error);
+
+    let errorMessage = '텔레그램 연동 테스트 실패';
+
+    if (error.response) {
+      // Telegram API 에러
+      if (error.response.status === 401) {
+        errorMessage = 'Bot Token이 올바르지 않습니다.';
+      } else if (error.response.status === 400) {
+        errorMessage = 'Chat ID가 올바르지 않거나 Bot과 대화를 시작하지 않았습니다.';
+      } else {
+        errorMessage = error.response.data?.description || errorMessage;
+      }
+    } else if (error.code === 'ENOTFOUND') {
+      errorMessage = '네트워크 연결을 확인해주세요.';
+    }
+
+    res.status(400).json({
+      success: false,
+      error: errorMessage,
+      details: error.response?.data
+    });
   }
 });
 

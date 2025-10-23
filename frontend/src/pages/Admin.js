@@ -104,7 +104,6 @@ const Admin = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('만료일이 업데이트되었습니다.');
         setEditingUserId(null);
         setNewExpireDate('');
         fetchUsers(pagination.currentPage);
@@ -231,7 +230,6 @@ const Admin = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('사용자가 등록되었습니다.');
         // 폼 초기화
         setNewUser({ username: '', email: '', expire_at: '' });
         setEmailCheck({ checking: false, available: null, message: '' });
