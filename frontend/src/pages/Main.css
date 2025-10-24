@@ -102,7 +102,7 @@
 
 .expire-at-text {
   font-size: 13px;
-  color: #666;
+  color: #667eea;
   font-weight: 500;
 }
 
@@ -437,6 +437,134 @@
 .icon-btn-test:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Market Selection */
+.market-select-container {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.market-select-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.market-select-wrapper {
+  position: relative;
+}
+
+.market-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  font-size: 14px;
+  color: #333;
+  transition: none;
+}
+
+.market-search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.market-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+}
+
+.market-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  z-index: 100;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.market-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.market-item:hover {
+  background: #f8f9fa;
+}
+
+.market-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.market-code-small {
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+}
+
+.market-no-results {
+  padding: 16px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.selected-market-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+}
+
+.selected-market-text {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.market-code {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 400;
+}
+
+.market-clear-btn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: none;
+  border-radius: 0;
+}
+
+.market-clear-btn:hover {
+  background: #e9ecef;
+  color: #dc2626;
 }
 
 /* Test Button Row */

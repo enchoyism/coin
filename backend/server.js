@@ -6,18 +6,12 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const mysql = require('mysql2/promise');
+const config = require('./utils/config');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // MySQL 연결 설정
-const dbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASS || '',
-  port: process.env.MYSQL_PORT || 3306,
-  database: process.env.MYSQL_DATABASE || 'coin'
-};
 
 // Middleware
 app.use(express.json());
@@ -53,7 +47,7 @@ passport.use(new GoogleStrategy({
       const userEmail = profile.emails[0].value;
 
       // DB에서 사용자 확인
-      connection = await mysql.createConnection(dbConfig);
+      connection = await mysql.createConnection(config.dbConfig);
       const [users] = await connection.query(
         'SELECT id, username, email, expire_at, is_admin FROM users WHERE email = ?',
         [userEmail]

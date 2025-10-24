@@ -17,8 +17,7 @@ const Main = () => {
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
   };
 
   // API KEY  관리 상태
@@ -30,6 +29,12 @@ const Main = () => {
   const [isApiEditing, setIsApiEditing] = useState(false);
   const [isSecretEditing, setIsSecretEditing] = useState(false);
   const [bithumbExpireAt, setBithumbExpireAt] = useState(null);
+
+  // 마켓 선택 상태
+  const [selectedMarket, setSelectedMarket] = useState(null);
+  const [marketSearch, setMarketSearch] = useState('');
+  const [marketList, setMarketList] = useState([]);
+  const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
 
   // SNS 연동 KEY  관리 상태
   const [snsKey, setSnsKey] = useState('');
@@ -44,20 +49,90 @@ const Main = () => {
   useEffect(() => {
     if (user?.email) {
       fetchConnectionData();
+      fetchMarketList();
     }
   }, [user]);
+
+  // 마켓 목록 조회
+  const fetchMarketList = async () => {
+    try {
+      const response = await axios.get(
+        'http://localhost:3001/api/markets',
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setMarketList(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching market list:', error);
+    }
+  };
+
+  // 마켓 검색 필터링
+  const filteredMarkets = marketList.filter(market => {
+    if (!marketSearch) return true;
+    const searchLower = marketSearch.toLowerCase();
+    return (
+      market.market.toLowerCase().includes(searchLower) ||
+      market.korean_name.toLowerCase().includes(searchLower) ||
+      market.english_name.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // 마켓 선택 핸들러
+  const handleMarketSelect = async (market) => {
+    setSelectedMarket(market.market);
+    setMarketSearch('');
+    setIsMarketDropdownOpen(false);
+
+    // 서버에 저장
+    try {
+      await axios.post(
+        'http://localhost:3001/api/connections',
+        {
+          email: user.email,
+          bithumb_market: market.market
+        },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error('Error saving market selection:', error);
+      alert('마켓 선택 저장에 실패했습니다.');
+    }
+  };
+
+  // 마켓 선택 해제
+  const handleMarketClear = async () => {
+    setSelectedMarket(null);
+
+    try {
+      await axios.post(
+        'http://localhost:3001/api/connections',
+        {
+          email: user.email,
+          bithumb_market: null
+        },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error('Error clearing market selection:', error);
+      alert('마켓 선택 해제에 실패했습니다.');
+    }
+  };
 
   // 모든 키 등록 및 ON 상태 확인하여 아코디언 자동 접기
   useEffect(() => {
     const allRegistered = isApiRegistered && isSecretRegistered && isSnsRegistered;
     const allEnabled = isApiEnabled && isSnsEnabled;
+    const marketSelected = selectedMarket !== null && selectedMarket !== '';
 
-    if (allRegistered && allEnabled) {
+    if (allRegistered && allEnabled && marketSelected) {
       setIsAccordionOpen(false);
     } else {
       setIsAccordionOpen(true);
     }
-  }, [isApiRegistered, isSecretRegistered, isSnsRegistered, isApiEnabled, isSnsEnabled]);
+  }, [isApiRegistered, isSecretRegistered, isSnsRegistered, isApiEnabled, isSnsEnabled, selectedMarket]);
 
   const fetchConnectionData = async () => {
     try {
@@ -67,7 +142,7 @@ const Main = () => {
       );
 
       if (response.data.success) {
-        const { c_bithumb, c_bithumb_secret, bithumb_mode, bithumb_expire_at, c_telegram, telegram_mode } = response.data.data;
+        const { c_bithumb, c_bithumb_secret, bithumb_mode, bithumb_market, bithumb_expire_at, c_telegram, telegram_mode } = response.data.data;
 
         // Bithumb API Key 설정
         if (c_bithumb) {
@@ -80,6 +155,11 @@ const Main = () => {
         if (c_bithumb_secret) {
           setApiSecretKey(c_bithumb_secret);
           setIsSecretRegistered(true);
+        }
+
+        // Bithumb Market 설정
+        if (bithumb_market) {
+          setSelectedMarket(bithumb_market);
         }
 
         // Bithumb Expire At 설정
@@ -478,7 +558,15 @@ const Main = () => {
         {/* 통합 KEY  관리 섹션 */}
         <div className="config-section">
           <div className="section-header" onClick={toggleAccordion}>
-            <h3>연동 관리</h3>
+            <h3>
+              연동 관리
+              {bithumbExpireAt && (
+                <span className="expire-at-text">
+                  &nbsp;&nbsp;(Bithumb EXPIRE_AT: {formatDateTime(bithumbExpireAt)})
+                </span>
+              )}
+            </h3>
+            
             <button className="accordion-toggle-btn">
               {isAccordionOpen ? '−' : '+'}
             </button>
@@ -660,6 +748,65 @@ const Main = () => {
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                   </button>
+                </div>
+              )}
+
+              {/* 마켓 선택 */}
+              {isApiRegistered && isSecretRegistered && (
+                <div className="market-select-container">
+                  {selectedMarket ? (
+                    <div className="selected-market-display">
+                      <span className="selected-market-text">
+                        {selectedMarket}
+                        <span className="market-code"> {marketList.find(m => m.market === selectedMarket)?.korean_name} ({marketList.find(m => m.market === selectedMarket)?.english_name})</span>
+                      </span>
+                      <button
+                        className="market-clear-btn"
+                        onClick={handleMarketClear}
+                        title="선택 해제"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="market-select-wrapper">
+                      <input
+                        type="text"
+                        className="market-search-input"
+                        placeholder="마켓 선택 (검색 예: BTC, 비트코인)"
+                        value={marketSearch}
+                        onChange={(e) => setMarketSearch(e.target.value)}
+                        onFocus={() => setIsMarketDropdownOpen(true)}
+                      />
+                      {isMarketDropdownOpen && (
+                        <>
+                          <div
+                            className="market-dropdown-overlay"
+                            onClick={() => setIsMarketDropdownOpen(false)}
+                          />
+                          <div className="market-dropdown">
+                            {filteredMarkets.length > 0 ? (
+                              filteredMarkets.map(market => (
+                                <div
+                                  key={market.id}
+                                  className="market-item"
+                                  onClick={() => handleMarketSelect(market)}
+                                >
+                                  <span className="market-code-small">{market.market}</span>
+                                  <span className="market-name">{market.korean_name} ({market.english_name})</span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="market-no-results">검색 결과가 없습니다.</div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+const config = require('../utils/config');
 require('dotenv').config();
 
 const router = express.Router();
@@ -38,7 +39,6 @@ async function initializeDatabase() {
 
     await connection.query('USE coin');
 
-    // 1. users 테이블 생성 - 사용자 정보 관리
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -69,20 +69,48 @@ async function initializeDatabase() {
     console.log('Default admin user checked/inserted');
     
     await connection.query(`
-        CREATE TABLE IF NOT EXISTS connection (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일 (고유값)',
-            c_bithumb VARCHAR(500) NULL,
-            c_bithumb_secret VARCHAR(500) NULL,
-            bithumb_expire_at DATETIME NULL,
-            bithumb_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',
-            c_telegram VARCHAR(500) NULL,
-            telegram_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',
-            UNIQUE KEY unique_email (email)
-        ) ENGINE=InnoDB
-          DEFAULT CHARSET=utf8mb4
-          COLLATE=utf8mb4_unicode_ci
+      CREATE TABLE IF NOT EXISTS connection (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일 (고유값)',
+          c_bithumb VARCHAR(500) NULL,
+          c_bithumb_secret VARCHAR(500) NULL,
+          bithumb_market VARCHAR(100) NULL,
+          bithumb_expire_at DATETIME NULL,
+          bithumb_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',
+          c_telegram VARCHAR(500) NULL,
+          telegram_mode VARCHAR(10) NOT NULL DEFAULT 'OFF' COMMENT 'ON/OFF',
+          UNIQUE KEY unique_email (email)
+      ) ENGINE=InnoDB
+        DEFAULT CHARSET=utf8mb4
+        COLLATE=utf8mb4_unicode_ci
     `);
+
+    await connection.query(`DROP TABLE IF EXISTS market`);
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS market (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          market VARCHAR(100) NOT NULL UNIQUE,
+          korean_name VARCHAR(100) NOT NULL,
+          english_name VARCHAR(100) NOT NULL,
+          UNIQUE KEY unique_market (market)
+      ) ENGINE=InnoDB
+        DEFAULT CHARSET=utf8mb4
+        COLLATE=utf8mb4_unicode_ci
+    `);
+    const markets = config.bithumbMarkets.sort((a, b) => a - b);
+    for (const m of markets) {
+      await connection.query(`
+        INSERT INTO market (
+          market, 
+          korean_name, 
+          english_name
+        ) VALUES (
+         '${m.market}', 
+         '${m.korean_name}', 
+         '${m.english_name}'
+        )  
+      `);
+    }
 
     // 성공 응답 설정
     response.success = true;

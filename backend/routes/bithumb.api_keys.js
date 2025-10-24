@@ -5,21 +5,14 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
 const { decrypt } = require('../utils/crypto');
-
-const dbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASS || '',
-  port: process.env.MYSQL_PORT || 3306,
-  database: process.env.MYSQL_DATABASE || 'coin'
-};
+const config = require('../utils/config');
 
 router.get('/api-keys', async (req, res) => {
   let connection;
   try {
     const userEmail = req.user.email;
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
     const [rows] = await connection.query('SELECT c_bithumb, c_bithumb_secret FROM connection WHERE email = ?', [userEmail]);
 
     if (rows.length === 0 || !rows[0].c_bithumb || !rows[0].c_bithumb_secret) {

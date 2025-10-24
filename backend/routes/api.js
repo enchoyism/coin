@@ -3,15 +3,7 @@ const mysql = require('mysql2/promise');
 const axios = require('axios');
 const router = express.Router();
 const { encrypt, decrypt } = require('../utils/crypto');
-
-// MySQL 연결 설정
-const dbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASS || '',
-  port: process.env.MYSQL_PORT || 3306,
-  database: process.env.MYSQL_DATABASE || 'coin'
-};
+const config = require('../utils/config');
 
 // Middleware to check authentication
 const isAuthenticated = (req, res, next) => {
@@ -48,7 +40,7 @@ router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
     const onlyExpired = req.query.onlyExpired === 'true';
     const offset = (page - 1) * limit;
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     // 검색 조건
     let whereConditions = [];
@@ -142,7 +134,7 @@ router.patch('/users/:id/expire', isAuthenticated, isAdmin, async (req, res) => 
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     // 사용자 존재 확인
     const [users] = await connection.query(
@@ -216,7 +208,7 @@ router.get('/users/check-email', isAuthenticated, isAdmin, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     const [users] = await connection.query(
       'SELECT id FROM users WHERE email = ?',
@@ -271,7 +263,7 @@ router.post('/users', isAuthenticated, isAdmin, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     // 이메일 중복 체크
     const [existingUsers] = await connection.query(
@@ -336,7 +328,7 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     const [connections] = await connection.query(
       'SELECT * FROM connection WHERE email = ?',
@@ -368,6 +360,7 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
         c_bithumb: conn.c_bithumb ? decrypt(conn.c_bithumb) : null,
         c_bithumb_secret: conn.c_bithumb_secret ? decrypt(conn.c_bithumb_secret) : null,
         bithumb_mode: conn.bithumb_mode,
+        bithumb_market: conn.bithumb_market,
         bithumb_expire_at: conn.bithumb_expire_at,
         c_telegram: conn.c_telegram ? decrypt(conn.c_telegram) : null,
         telegram_mode: conn.telegram_mode
@@ -389,15 +382,61 @@ router.get('/connections/:email', isAuthenticated, async (req, res) => {
 });
 
 /**
+ * GET /api/markets
+ * 마켓 목록 조회
+ * Query params:
+ * - search: 검색어 (마켓 코드, 한글명, 영어명)
+ */
+router.get('/markets', isAuthenticated, async (req, res) => {
+  let connection;
+
+  try {
+    const search = req.query.search || '';
+
+    connection = await mysql.createConnection(config.dbConfig);
+
+    let query = 'SELECT * FROM market';
+    const params = [];
+
+    if (search) {
+      query += ' WHERE market LIKE ? OR korean_name LIKE ? OR english_name LIKE ?';
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    query += ' ORDER BY market ASC';
+
+    const [markets] = await connection.query(query, params);
+
+    res.json({
+      success: true,
+      data: markets
+    });
+
+  } catch (error) {
+    console.error('Error fetching markets:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch markets',
+      message: error.message
+    });
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+});
+
+/**
  * POST /api/connections
  * 연동 정보 생성 또는 업데이트
- * Body: { email, c_bithumb?, c_bithumb_secret?, bithumb_mode?, c_telegram?, telegram_mode? }
+ * Body: { email, c_bithumb?, c_bithumb_secret?, bithumb_mode?, bithumb_market?, c_telegram?, telegram_mode? }
  */
 router.post('/connections', isAuthenticated, async (req, res) => {
   let connection;
 
   try {
-    const { email, c_bithumb, c_bithumb_secret, bithumb_mode, c_telegram, telegram_mode } = req.body;
+    const { email, c_bithumb, c_bithumb_secret, bithumb_mode, bithumb_market, c_telegram, telegram_mode } = req.body;
 
     // 자신의 정보이거나 관리자만 수정 가능
     if (req.user.email !== email && !req.user.isAdmin) {
@@ -414,7 +453,7 @@ router.post('/connections', isAuthenticated, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     // 기존 데이터 조회
     const [existing] = await connection.query(
@@ -423,13 +462,14 @@ router.post('/connections', isAuthenticated, async (req, res) => {
     );
 
     // 데이터 암호화 - 요청에 포함된 경우만 처리
-    let finalBithumb, finalBithumbSecret, finalBithumbMode, finalTelegram, finalTelegramMode;
+    let finalBithumb, finalBithumbSecret, finalBithumbMode, finalBithumbMarket, finalTelegram, finalTelegramMode;
 
     if (existing.length > 0) {
       // UPDATE: 요청에 포함된 필드만 업데이트
       finalBithumb = c_bithumb !== undefined ? (c_bithumb ? encrypt(c_bithumb) : null) : existing[0].c_bithumb;
       finalBithumbSecret = c_bithumb_secret !== undefined ? (c_bithumb_secret ? encrypt(c_bithumb_secret) : null) : existing[0].c_bithumb_secret;
       finalBithumbMode = bithumb_mode !== undefined ? bithumb_mode : existing[0].bithumb_mode;
+      finalBithumbMarket = bithumb_market !== undefined ? bithumb_market : existing[0].bithumb_market;
       finalTelegram = c_telegram !== undefined ? (c_telegram ? encrypt(c_telegram) : null) : existing[0].c_telegram;
       finalTelegramMode = telegram_mode !== undefined ? telegram_mode : existing[0].telegram_mode;
     } else {
@@ -437,18 +477,20 @@ router.post('/connections', isAuthenticated, async (req, res) => {
       finalBithumb = c_bithumb ? encrypt(c_bithumb) : null;
       finalBithumbSecret = c_bithumb_secret ? encrypt(c_bithumb_secret) : null;
       finalBithumbMode = bithumb_mode || 'OFF';
+      finalBithumbMarket = bithumb_market || null;
       finalTelegram = c_telegram ? encrypt(c_telegram) : null;
       finalTelegramMode = telegram_mode || 'OFF';
     }
 
     // INSERT ... ON DUPLICATE KEY UPDATE
     await connection.query(`
-      INSERT INTO connection (email, c_bithumb, c_bithumb_secret, bithumb_mode, c_telegram, telegram_mode)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO connection (email, c_bithumb, c_bithumb_secret, bithumb_mode, bithumb_market, c_telegram, telegram_mode)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         c_bithumb = VALUES(c_bithumb),
         c_bithumb_secret = VALUES(c_bithumb_secret),
         bithumb_mode = VALUES(bithumb_mode),
+        bithumb_market = VALUES(bithumb_market),
         c_telegram = VALUES(c_telegram),
         telegram_mode = VALUES(telegram_mode)
     `, [
@@ -456,6 +498,7 @@ router.post('/connections', isAuthenticated, async (req, res) => {
       finalBithumb,
       finalBithumbSecret,
       finalBithumbMode,
+      finalBithumbMarket,
       finalTelegram,
       finalTelegramMode
     ]);
@@ -476,6 +519,7 @@ router.post('/connections', isAuthenticated, async (req, res) => {
         c_bithumb: conn.c_bithumb ? decrypt(conn.c_bithumb) : null,
         c_bithumb_secret: conn.c_bithumb_secret ? decrypt(conn.c_bithumb_secret) : null,
         bithumb_mode: conn.bithumb_mode,
+        bithumb_market: conn.bithumb_market,
         c_telegram: conn.c_telegram ? decrypt(conn.c_telegram) : null,
         telegram_mode: conn.telegram_mode
       }
@@ -536,7 +580,7 @@ router.patch('/connections/:email/mode', isAuthenticated, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     const field = type === 'bithumb' ? 'bithumb_mode' : 'telegram_mode';
 
@@ -686,7 +730,7 @@ router.post('/telegram/test', isAuthenticated, async (req, res) => {
       });
     }
 
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(config.dbConfig);
 
     // 연동 정보 조회
     const [connections] = await connection.query(
