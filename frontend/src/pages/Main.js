@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -6,7 +6,7 @@ import Header from '../components/Header';
 import './Main.css';
 
 const Main = () => {
-  const tradeRefreshSec = 5;
+  const tradeRefresh = 5;
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -50,6 +50,19 @@ const Main = () => {
   const [currentPrice, setCurrentPrice] = useState(null);
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isTradeOpen, setIsTradeOpen] = useState(true);
+
+  // 주문 내역 섹션 상태
+  const [orders, setOrders] = useState([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState(null);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(true);
+  const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'wait', 'done', 'cancel'
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // 검색조건 접힌 상태 (default closed)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState(25); // 페이지당 개수
+  const [selectedOrderUuid, setSelectedOrderUuid] = useState(null); // 선택된 주문 UUID
+  const [orderDetail, setOrderDetail] = useState(null); // 주문 상세 정보
+  const [isLoadingOrderDetail, setIsLoadingOrderDetail] = useState(false);
 
   // 아코디언 상태
   const [isAccordionOpen, setIsAccordionOpen] = useState(true);
@@ -599,36 +612,129 @@ const Main = () => {
     }
   };
 
+  // 주문 내역 조회
+  const fetchOrders = async () => {
+    if (!selectedMarket) return;
+
+    try {
+      setIsLoadingOrders(true);
+      setOrdersError(null);
+
+      // Build query params with pagination
+      let queryParams = `market=${selectedMarket}&limit=${ordersPerPage}&page=${currentPage}&order_by=desc`;
+
+      // Add state filter if not 'all'
+      if (orderFilter !== 'all') {
+        queryParams += `&state=${orderFilter}`;
+      } else {
+        // For 'all', fetch wait, done, and cancel states
+        const states = ['wait', 'done', 'cancel'];
+        const statesQuery = states.map(state => `states=${state}`).join('&');
+        queryParams += `&${statesQuery}`;
+      }
+
+      const response = await axios.get(
+        `http://localhost:3001/api/bithumb/orders?${queryParams}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setOrders(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrdersError(error.response?.data?.error || '주문 내역을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
   // Bithumb 연동 상태 확인
   const isBithumbReady = isApiRegistered && isSecretRegistered && isApiEnabled && selectedMarket;
 
-  // 5초마다 계좌 정보 및 현재가 갱신
+  // 주문 상세 정보 가져오기
+  const fetchOrderDetail = async (uuid) => {
+    setIsLoadingOrderDetail(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/bithumb/order?uuid=${uuid}`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('주문 상세 조회 실패');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOrderDetail(data.data);
+      } else {
+        throw new Error(data.error || '주문 상세 조회 실패');
+      }
+    } catch (error) {
+      console.error('주문 상세 조회 오류:', error);
+      setOrderDetail(null);
+    } finally {
+      setIsLoadingOrderDetail(false);
+    }
+  };
+
+  // 주문 행 클릭 핸들러
+  const handleOrderRowClick = (uuid) => {
+    if (selectedOrderUuid === uuid) {
+      // 같은 주문을 다시 클릭하면 닫기
+      setSelectedOrderUuid(null);
+      setOrderDetail(null);
+    } else {
+      // 새로운 주문 선택
+      setSelectedOrderUuid(uuid);
+      fetchOrderDetail(uuid);
+    }
+  };
+
+  // orderFilter 변경 시 페이지를 1로 리셋
   useEffect(() => {
-    let intervalId;
+    setCurrentPage(1);
+  }, [orderFilter]);
+
+  // 페이징 다음 버튼 활성화 상태 (useMemo로 안정화)
+  const hasNextPage = useMemo(() => {
+    return orders.length >= ordersPerPage;
+  }, [orders.length, ordersPerPage]);
+
+  // 5초마다 계좌 정보, 현재가, 주문 내역 갱신
+  useEffect(() => {
+    let intervalSecId;
+    let intervalMinId;
 
     if (isBithumbReady) {
       // 초기 로드
       fetchAccounts();
       fetchCurrentPrice();
+      fetchOrders();
 
       // 5초마다 갱신
-      intervalId = setInterval(() => {
+      intervalSecId = setInterval(() => {
         fetchAccounts();
         fetchCurrentPrice();
-      }, tradeRefreshSec * 1000);
+      }, tradeRefresh * 1000);
+      intervalMinId = setInterval(() => {
+        fetchOrders();
+      }, tradeRefresh * 1000 * 60);
     } else {
       // 조건이 맞지 않으면 상태 초기화
       setAccounts([]);
       setAccountsError(null);
       setCurrentPrice(null);
+      setOrders([]);
+      setOrdersError(null);
     }
 
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      if (intervalSecId) {
+        clearInterval(intervalSecId);
       }
     };
-  }, [isBithumbReady, selectedMarket]);
+  }, [isBithumbReady, selectedMarket, orderFilter, currentPage, ordersPerPage]);
 
   return (
     <div className="main-container">
@@ -1016,7 +1122,7 @@ const Main = () => {
         {isBithumbReady && (
           <div className="trade-section">
             <div className="section-header" onClick={() => setIsTradeOpen(!isTradeOpen)}>
-              <h3>트레이드</h3>
+              <h3>트레이드 {selectedMarket}</h3>
               <button className="accordion-toggle-btn">
                 {isTradeOpen ? '−' : '+'}
               </button>
@@ -1072,7 +1178,7 @@ const Main = () => {
                       })()}
                     </div>
                     <div className="assets-header-right">
-                      <span className="refresh-indicator">refresh {tradeRefreshSec} sec ●</span>
+                      <span className="refresh-indicator">refresh {tradeRefresh} sec ●</span>
                       <button className="toggle-assets-btn">
                         {isAssetsOpen ? '−' : '+'}
                       </button>
@@ -1096,7 +1202,7 @@ const Main = () => {
                         return 0;
                       });
 
-                      return sortedAccounts.map((account, index) => {
+                      return sortedAccounts.map((account) => {
                         const balance = parseFloat(account.balance);
                         const locked = parseFloat(account.locked);
                         const total = balance + locked;
@@ -1110,7 +1216,7 @@ const Main = () => {
                         }
 
                         return (
-                          <div key={index} className="asset-item">
+                          <div key={account.currency} className="asset-item">
                             <div className="asset-info">
                               <span className="asset-currency">{account.currency}</span>
                             </div>
@@ -1142,12 +1248,337 @@ const Main = () => {
               ) : (
                 <div className="trade-empty">보유 중인 자산이 없습니다.</div>
               )}
+
+                  {/* 주문 내역 */}
+                  <div className="orders-container">
+                    <div className="orders-header">
+                      <div className="orders-header-left" onClick={() => setIsOrdersOpen(!isOrdersOpen)}>
+                        <span className="orders-label">주문내역</span>
+                      </div>
+                      <div className="orders-header-right">
+                        <span className="refresh-indicator">refresh {tradeRefresh} min ●</span>
+                        <button
+                          className="filter-icon-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsFilterOpen(!isFilterOpen);
+                          }}
+                          title="필터"
+                        >
+                          ⚙
+                        </button>
+                        <button className="toggle-orders-btn" onClick={() => setIsOrdersOpen(!isOrdersOpen)}>
+                          {isOrdersOpen ? '−' : '+'}
+                        </button>
+                      </div>
+                    </div>
+                    {isOrdersOpen && (
+                      <>
+                        {isFilterOpen && (
+                          <div className="order-filter-section">
+                            <div className="filter-group">
+                              <span className="filter-group-label">상태:</span>
+                              <label className="filter-radio">
+                                <input
+                                  type="radio"
+                                  name="orderFilter"
+                                  value="all"
+                                  checked={orderFilter === 'all'}
+                                  onChange={(e) => setOrderFilter(e.target.value)}
+                                />
+                                <span>전체</span>
+                              </label>
+                              <label className="filter-radio">
+                                <input
+                                  type="radio"
+                                  name="orderFilter"
+                                  value="wait"
+                                  checked={orderFilter === 'wait'}
+                                  onChange={(e) => setOrderFilter(e.target.value)}
+                                />
+                                <span>대기</span>
+                              </label>
+                              <label className="filter-radio">
+                                <input
+                                  type="radio"
+                                  name="orderFilter"
+                                  value="done"
+                                  checked={orderFilter === 'done'}
+                                  onChange={(e) => setOrderFilter(e.target.value)}
+                                />
+                                <span>완료</span>
+                              </label>
+                              <label className="filter-radio">
+                                <input
+                                  type="radio"
+                                  name="orderFilter"
+                                  value="cancel"
+                                  checked={orderFilter === 'cancel'}
+                                  onChange={(e) => setOrderFilter(e.target.value)}
+                                />
+                                <span>취소</span>
+                              </label>
+                            </div>
+                            <div className="filter-divider"></div>
+                            <div className="filter-group">
+                              <span className="filter-group-label">개수:</span>
+                              <select
+                                className="limit-select"
+                                value={ordersPerPage}
+                                onChange={(e) => {
+                                  setOrdersPerPage(Number(e.target.value));
+                                  setCurrentPage(1);
+                                }}
+                              >
+                                <option value="1">1</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                        <div className="orders-with-pagination">
+                          <div className="orders-list-container">
+                            {isLoadingOrders && orders.length === 0 ? (
+                              <div className="orders-loading">주문 내역을 불러오는 중...</div>
+                            ) : ordersError ? (
+                              <div className="orders-error">
+                                <span className="error-icon">⚠️</span>
+                                <span>{ordersError}</span>
+                              </div>
+                            ) : orders.length > 0 ? (
+                              <table className="orders-table">
+                                <thead>
+                                  <tr>
+                                    <th>매매</th>
+                                    <th>구분</th>
+                                    <th>상태</th>
+                                    <th>주문가격</th>
+                                    <th>주문수량</th>
+                                    <th>체결수량</th>
+                                    <th>미체결수량</th>
+                                    <th>주문시간</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {orders.map((order) => (
+                                    <tr
+                                      key={order.uuid}
+                                      className="order-row"
+                                      onClick={() => handleOrderRowClick(order.uuid)}
+                                    >
+                                      <td>
+                                        <span className={`order-type ${order.order_type === 'AI' ? 'ai' : 'user'}`}>
+                                          {order.order_type || 'USER'}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span className={`order-side ${order.side}`}>
+                                          {order.side === 'bid' ? '매수' : '매도'}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span className={`order-state ${order.state}`}>
+                                          {order.state === 'wait' ? '대기' : order.state === 'done' ? '완료' : '취소'}
+                                        </span>
+                                      </td>
+                                      <td className="order-price">{parseFloat(order.price).toLocaleString()}</td>
+                                      <td className="order-volume">{order.volume}</td>
+                                      <td className="order-executed">{order.executed_volume}</td>
+                                      <td className="order-remaining">{order.remaining_volume}</td>
+                                      <td className="order-time">{formatDateTime(order.created_at)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <div className="orders-empty">주문 내역이 없습니다.</div>
+                            )}
+                          </div>
+                          {!isLoadingOrders && !ordersError && (
+                            <div className="pagination">
+                              <button
+                                className="pagination-btn"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                              >
+                                이전
+                              </button>
+                              <span className="pagination-info">
+                                {currentPage} 페이지
+                              </span>
+                              <button
+                                className="pagination-btn"
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                                disabled={!hasNextPage}
+                              >
+                                다음
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </>
             )}
           </div>
         )}
       </div>
+
+      {/* 주문 상세 모달 */}
+      {selectedOrderUuid && (
+        <div className="order-modal-overlay" onClick={() => {
+          setSelectedOrderUuid(null);
+          setOrderDetail(null);
+        }}>
+          <div className="order-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="order-modal-header">
+              <h3>주문 상세 정보</h3>
+              <button
+                className="order-modal-close"
+                onClick={() => {
+                  setSelectedOrderUuid(null);
+                  setOrderDetail(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="order-modal-body">
+              {isLoadingOrderDetail ? (
+                <div className="order-detail-loading">상세 정보를 불러오는 중...</div>
+              ) : orderDetail ? (
+                <div className="order-detail-content">
+                  {orderDetail.trade_log_desc && (
+                    <div className="order-detail-section" style={{marginBottom: '20px'}}>
+                      <h4>AI 트레이드 로그</h4>
+                      <div className="trade-log-desc">
+                        {orderDetail.trade_log_desc}
+                      </div>
+                    </div>
+                  )}
+                  <div className="order-detail-section">
+                    <h4>주문 정보</h4>
+                    <div className="order-detail-grid">
+                      <div className="detail-item detail-item-full">
+                        <span className="detail-label">주문 ID:</span>
+                        <span className="detail-value">{orderDetail.uuid}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">마켓:</span>
+                        <span className="detail-value">{orderDetail.market}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">매매유형:</span>
+                        <span className="detail-value">
+                          <span className={`order-type ${orderDetail.order_type === 'AI' ? 'ai' : 'user'}`}>
+                            {orderDetail.order_type || 'USER'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">주문 구분:</span>
+                        <span className="detail-value">
+                          <span className={`order-side ${orderDetail.side}`}>
+                            {orderDetail.side === 'bid' ? '매수' : '매도'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">주문 유형:</span>
+                        <span className="detail-value">{orderDetail.ord_type === 'limit' ? '지정가' : '시장가'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">상태:</span>
+                        <span className="detail-value">
+                          <span className={`order-state ${orderDetail.state}`}>
+                            {orderDetail.state === 'wait' ? '대기' : orderDetail.state === 'done' ? '완료' : '취소'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">주문시간:</span>
+                        <span className="detail-value">{formatDateTime(orderDetail.created_at)}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">주문가격:</span>
+                        <span className="detail-value">{parseFloat(orderDetail.price).toLocaleString()} KRW</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">주문수량:</span>
+                        <span className="detail-value">{orderDetail.volume}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">체결수량:</span>
+                        <span className="detail-value">{orderDetail.executed_volume}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">미체결수량:</span>
+                        <span className="detail-value">{orderDetail.remaining_volume}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">사용 수수료:</span>
+                        <span className="detail-value">{parseFloat(orderDetail.paid_fee || 0).toLocaleString()} KRW</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">예약 수수료:</span>
+                        <span className="detail-value">{parseFloat(orderDetail.reserved_fee || 0).toLocaleString()} KRW</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">남은 수수료:</span>
+                        <span className="detail-value">{parseFloat(orderDetail.remaining_fee || 0).toLocaleString()} KRW</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">거래 사용중:</span>
+                        <span className="detail-value">{parseFloat(orderDetail.locked || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {orderDetail.trades && orderDetail.trades.length > 0 && (
+                    <div className="order-detail-section" style={{marginTop: '20px'}}>
+                      <h4>체결 내역 ({orderDetail.trades_count}건)</h4>
+                      <div className="trades-list">
+                        {orderDetail.trades.map((trade, index) => (
+                          <div key={trade.uuid} className="trade-item">
+                            <div className="trade-header">
+                              <span className="trade-number">#{index + 1}</span>
+                              <span className="trade-time">{formatDateTime(trade.created_at)}</span>
+                            </div>
+                            <div className="trade-details">
+                              <div className="trade-detail-row">
+                                <span className="trade-label">체결 ID:</span>
+                                <span className="trade-value">{trade.uuid}</span>
+                              </div>
+                              <div className="trade-detail-row">
+                                <span className="trade-label">체결 가격:</span>
+                                <span className="trade-value">{parseFloat(trade.price).toLocaleString()} KRW</span>
+                              </div>
+                              <div className="trade-detail-row">
+                                <span className="trade-label">체결 수량:</span>
+                                <span className="trade-value">{trade.volume}</span>
+                              </div>
+                              <div className="trade-detail-row">
+                                <span className="trade-label">체결 금액:</span>
+                                <span className="trade-value">{parseFloat(trade.funds).toLocaleString()} KRW</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="order-detail-error">상세 정보를 불러올 수 없습니다.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

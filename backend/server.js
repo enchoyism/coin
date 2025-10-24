@@ -107,6 +107,8 @@ const apiRoutes = require('./routes/api');
 const bithumbApiKeysRoutes = require('./routes/bithumb.api_keys');
 const bithumbAccountsRoutes = require('./routes/bithumb.accounts');
 const bithumbTickerRoutes = require('./routes/bithumb.ticker');
+const bithumbOrdersRoutes = require('./routes/bithumb.orders');
+const bithumbOrderRoutes = require('./routes/bithumb.order');
 const initMysqlRoutes = require('./routes/init_mysql');
 
 // Routes
@@ -120,6 +122,8 @@ app.use('/api', apiRoutes);
 app.use('/api/bithumb', bithumbApiKeysRoutes);
 app.use('/api/bithumb', bithumbAccountsRoutes);
 app.use('/api/bithumb', bithumbTickerRoutes);
+app.use('/api/bithumb', bithumbOrdersRoutes);
+app.use('/api/bithumb', bithumbOrderRoutes);
 app.use('/api', initMysqlRoutes);
 
 app.listen(PORT, () => {

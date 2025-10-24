@@ -112,6 +112,17 @@ async function initializeDatabase() {
       `);
     }
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS trade_log (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          uuid VARCHAR(500) NOT NULL,
+          desc TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일'
+      ) ENGINE=InnoDB
+        DEFAULT CHARSET=utf8mb4
+        COLLATE=utf8mb4_unicode_ci
+    `);
+
     // 성공 응답 설정
     response.success = true;
     response.message = '데이터베이스 초기화가 성공적으로 완료되었습니다.';
