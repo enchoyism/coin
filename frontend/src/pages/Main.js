@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import './Main.css';
 
 const Main = () => {
+  const tradeRefreshSec = 5;
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -41,6 +42,14 @@ const Main = () => {
   const [isSnsRegistered, setIsSnsRegistered] = useState(false);
   const [isSnsEnabled, setIsSnsEnabled] = useState(false);
   const [isSnsEditing, setIsSnsEditing] = useState(false);
+
+  // TRADE 섹션 상태
+  const [accounts, setAccounts] = useState([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const [accountsError, setAccountsError] = useState(null);
+  const [currentPrice, setCurrentPrice] = useState(null);
+  const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [isTradeOpen, setIsTradeOpen] = useState(true);
 
   // 아코디언 상태
   const [isAccordionOpen, setIsAccordionOpen] = useState(true);
@@ -550,6 +559,77 @@ const Main = () => {
     }
   };
 
+  // 계좌 정보 조회
+  const fetchAccounts = async () => {
+    try {
+      setIsLoadingAccounts(true);
+      setAccountsError(null);
+
+      const response = await axios.get(
+        'http://localhost:3001/api/bithumb/accounts',
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setAccounts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      setAccountsError(error.response?.data?.error || '계좌 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  };
+
+  // 현재가 조회
+  const fetchCurrentPrice = async () => {
+    if (!selectedMarket) return;
+
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/api/bithumb/ticker?markets=${selectedMarket}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success && response.data.data && response.data.data.length > 0) {
+        setCurrentPrice(response.data.data[0].trade_price);
+      }
+    } catch (error) {
+      console.error('Error fetching ticker:', error);
+    }
+  };
+
+  // Bithumb 연동 상태 확인
+  const isBithumbReady = isApiRegistered && isSecretRegistered && isApiEnabled && selectedMarket;
+
+  // 5초마다 계좌 정보 및 현재가 갱신
+  useEffect(() => {
+    let intervalId;
+
+    if (isBithumbReady) {
+      // 초기 로드
+      fetchAccounts();
+      fetchCurrentPrice();
+
+      // 5초마다 갱신
+      intervalId = setInterval(() => {
+        fetchAccounts();
+        fetchCurrentPrice();
+      }, tradeRefreshSec * 1000);
+    } else {
+      // 조건이 맞지 않으면 상태 초기화
+      setAccounts([]);
+      setAccountsError(null);
+      setCurrentPrice(null);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isBithumbReady, selectedMarket]);
+
   return (
     <div className="main-container">
       <Header />
@@ -931,6 +1011,142 @@ const Main = () => {
             </>
           )}
         </div>
+
+        {/* TRADE 섹션 */}
+        {isBithumbReady && (
+          <div className="trade-section">
+            <div className="section-header" onClick={() => setIsTradeOpen(!isTradeOpen)}>
+              <h3>트레이드</h3>
+              <button className="accordion-toggle-btn">
+                {isTradeOpen ? '−' : '+'}
+              </button>
+            </div>
+
+            {isTradeOpen && (
+              <>
+                <div className="section-divider"></div>
+                <div className="trade-body">
+              {isLoadingAccounts && accounts.length === 0 ? (
+                <div className="trade-loading">계좌 정보를 불러오는 중...</div>
+              ) : accountsError ? (
+                <div className="trade-error">
+                  <span className="error-icon">⚠️</span>
+                  <span>{accountsError}</span>
+                </div>
+              ) : accounts.length > 0 ? (
+                <div className="assets-container">
+                  <div className="assets-header" onClick={() => setIsAssetsOpen(!isAssetsOpen)}>
+                    <div className="assets-header-left">
+                      {(() => {
+                        // 총 원화 환산 금액 계산 및 각 통화별 금액
+                        const [baseCurrency, tradeCurrency] = selectedMarket ? selectedMarket.split('-') : ['KRW', null];
+                        let totalKrwValue = 0;
+                        let krwAmount = 0;
+                        let cryptoKrwValue = 0;
+
+                        accounts.forEach(account => {
+                          if (account.currency === baseCurrency || account.currency === tradeCurrency) {
+                            const balance = parseFloat(account.balance);
+                            const locked = parseFloat(account.locked);
+                            const total = balance + locked;
+
+                            if (account.currency === baseCurrency) {
+                              krwAmount = total;
+                              totalKrwValue += total;
+                            } else if (account.currency === tradeCurrency && currentPrice) {
+                              cryptoKrwValue = total * currentPrice;
+                              totalKrwValue += cryptoKrwValue;
+                            }
+                          }
+                        });
+
+                        return (
+                          <>
+                            <span className="assets-label">현재자산(원):</span>
+                            <span className="total-amount">{Math.floor(totalKrwValue).toLocaleString()}</span>
+                            <span className="amount-detail">
+                              ({Math.floor(krwAmount).toLocaleString()} KRW + {Math.floor(cryptoKrwValue).toLocaleString()} KRW-{tradeCurrency})
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="assets-header-right">
+                      <span className="refresh-indicator">refresh {tradeRefreshSec} sec ●</span>
+                      <button className="toggle-assets-btn">
+                        {isAssetsOpen ? '−' : '+'}
+                      </button>
+                    </div>
+                  </div>
+                  {isAssetsOpen && (
+                    <div className="assets-list">
+                      {(() => {
+                      // 선택된 마켓에서 기준 통화와 거래 통화 추출 (예: KRW-ETH -> KRW, ETH)
+                      const [baseCurrency, tradeCurrency] = selectedMarket ? selectedMarket.split('-') : ['KRW', null];
+
+                      // 필터링: 기준 통화와 거래 통화만 표시
+                      const filteredAccounts = accounts.filter(account =>
+                        account.currency === baseCurrency || account.currency === tradeCurrency
+                      );
+
+                      // 정렬: 기준 통화(KRW) 먼저, 거래 통화(ETH 등) 나중
+                      const sortedAccounts = filteredAccounts.sort((a, b) => {
+                        if (a.currency === baseCurrency) return -1;
+                        if (b.currency === baseCurrency) return 1;
+                        return 0;
+                      });
+
+                      return sortedAccounts.map((account, index) => {
+                        const balance = parseFloat(account.balance);
+                        const locked = parseFloat(account.locked);
+                        const total = balance + locked;
+
+                        // 원화 환산
+                        let krwValue = null;
+                        if (account.currency !== baseCurrency && currentPrice) {
+                          krwValue = total * currentPrice;
+                        } else if (account.currency === baseCurrency) {
+                          krwValue = total;
+                        }
+
+                        return (
+                          <div key={index} className="asset-item">
+                            <div className="asset-info">
+                              <span className="asset-currency">{account.currency}</span>
+                            </div>
+                            <div className="asset-amounts">
+                              <div className="amount-row">
+                                <span className="amount-label">보유잔고:</span>
+                                <span className="amount-value">{total}</span>
+                              </div>
+                              {account.avg_buy_price && parseFloat(account.avg_buy_price) > 0 && (
+                                <div className="amount-row avg-price">
+                                  <span className="amount-label">평균매수가:</span>
+                                  <span className="amount-value">{parseFloat(account.avg_buy_price).toLocaleString()}</span>
+                                </div>
+                              )}
+                              {krwValue !== null && (
+                                <div className="amount-row krw-value">
+                                  <span className="amount-label">평가금액(원):</span>
+                                  <span className="amount-value">{Math.floor(krwValue).toLocaleString()}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="trade-empty">보유 중인 자산이 없습니다.</div>
+              )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -105,6 +105,8 @@ passport.deserializeUser((user, done) => {
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const bithumbApiKeysRoutes = require('./routes/bithumb.api_keys');
+const bithumbAccountsRoutes = require('./routes/bithumb.accounts');
+const bithumbTickerRoutes = require('./routes/bithumb.ticker');
 const initMysqlRoutes = require('./routes/init_mysql');
 
 // Routes
@@ -116,6 +118,8 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
 app.use('/api/bithumb', bithumbApiKeysRoutes);
+app.use('/api/bithumb', bithumbAccountsRoutes);
+app.use('/api/bithumb', bithumbTickerRoutes);
 app.use('/api', initMysqlRoutes);
 
 app.listen(PORT, () => {
